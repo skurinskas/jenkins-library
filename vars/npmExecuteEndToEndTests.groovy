@@ -50,7 +50,7 @@ void call(Map parameters = [:]) {
             stepParamKey1: 'scriptMissing',
             stepParam1: parameters?.script == null
         ], config)
-
+        println("Here we have the config: ${config}")
         def e2ETests = [:]
         def index = 1
 
@@ -61,23 +61,29 @@ void call(Map parameters = [:]) {
         // TODO: add config validation
 
         for (def appUrl : config.appUrls) {
+            List credentials = []
+
+            if (appUrl.credentialId) {
+                println("We'll add the credentials to the credentials list now.")
+                credentials.add([$class: 'UsernamePasswordMultiBinding', credentialsId: appUrl.credentialId, passwordVariable: 'e2e_password', usernameVariable: 'e2e_username'])
+                println("Thats the credentials list now: ${credentials}")
+            }
             Closure e2eTest = {
                 Utils utils = new Utils()
                 utils.unstashStageFiles(script, stageName)
                 try {
-                    if (appUrl.credentialId) {
-                        credentials.add([$class: 'UsernamePasswordMultiBinding', credentialsId: appUrl.credentialId, passwordVariable: 'e2e_password', usernameVariable: 'e2e_username'])
-                    }
-
                     withCredentials(credentials) {
+                        // TODO move up to config validation
                         if (appUrl instanceof Map && appUrl.url) {
                             if (appUrl.parameters) {
                                 // TODO: See what happens with the appUrl.parameters property (problem of having a string which should atually be a list of parameters handed to the execrunner in the go step later)
+                                println("appUrl.parameters is set")
                                 npmExecuteScripts(script: script, parameters: npmParameters, install: false, runScripts: ["$config.runScript"], scriptOptions: ["--launchUrl=${appUrl}", appUrl.parameters])
                             }
+                            println("appUrl.parameters is not set")
                             npmExecuteScripts(script: script, parameters: npmParameters, install: false, runScripts: ["$config.runScript"], scriptOptions: ["--launchUrl=${appUrl}"])
                         } else {
-                            error("Each appUrl in the configuration must be either a String or a Map containing a property url and a property credentialId. For more information, please visit https://github.com/SAP/cloud-s4-sdk-pipeline/blob/master/configuration.md#endtoendtests")
+                            error("Each appUrl in the configuration must be a Map containing a property url. Optionally it can contain a property credentialId and parameters.")
                         }
                     }
 
@@ -85,6 +91,7 @@ void call(Map parameters = [:]) {
                    error "[${STEP_NAME}] The test execution failed with error: ${e.getMessage()}"
                 } finally {
                     //TODO: Fix Report handling
+                    /*
                     archiveArtifacts artifacts: "${s4SdkGlobals.endToEndReports}/**", allowEmptyArchive: true
 
                     List cucumberFiles = findFiles(glob: "${s4SdkGlobals.endToEndReports}/*.json")
@@ -97,7 +104,8 @@ void call(Map parameters = [:]) {
                         junit allowEmptyResults: true, testResults: "${s4SdkGlobals.endToEndReports}/*.xml"
                     } else {
                         error("No JUnit or cucumber report files found in ${s4SdkGlobals.endToEndReports}")
-                    }
+                    }*/
+                    println("Implement the report handling please")
                     utils.stashStageFiles(script, parameters.stage)
                 }
             }
