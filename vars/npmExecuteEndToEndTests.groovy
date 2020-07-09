@@ -16,8 +16,10 @@ import static com.sap.piper.Prerequisites.checkScript
 @Field Set STEP_CONFIG_KEYS = GENERAL_CONFIG_KEYS.plus([
     /**
      * The URLs under which the app is available after deployment.
-     * Each appUrl can be a string with the URL or a map containing a property url, a property credentialId, and an optional property parameters.
+     * Each element of appUrls must be a map containing a property url, an optional property credentialId, and an optional property parameters.
      * The optional property parameters can be used to pass additional parameters to the end-to-end test deployment reachable via the given application URL.
+     * These parameters must be a list of strings, where each string corresponds to one element of the parameters.
+     * For example, if the parameter `--tag scenario1` should be passed to the test, specify parameters: ["--tag", "scenario1"].
      * These parameters are appended to the npm command during execution.
      */
     'appUrls',
@@ -59,10 +61,35 @@ void call(Map parameters = [:]) {
         npmParameters.dockerOptions = ['--shm-size 512MB']
 
         // TODO: add config validation
+        if (!config.appUrls) {
+            error "[${STEP_NAME}] The execution failed, since no appUrls are defined. Please provide appUrls as a list of maps."
+        }
+        if (!(config.appUrls instanceof List)) {
+            error "[${STEP_NAME}] The execution failed, since appUrls is not a list. Please provide appUrls as a list of maps."
+        }
+        if (!config.runScript) {
+            error "[${STEP_NAME}] No runScript was defined."
+        }
 
-        for (def appUrl : config.appUrls) {
+
+        //for (def appUrl : config.appUrls) {
+        for (int i = 0; i < config.appUrls.size(); i++) {
             List credentials = []
 
+            def appUrl = config.appUrls[i]
+            println("Thats the type of appurl: ${appUrl.getClass()}")
+            println("Thats the bool: ${appUrl instanceof Map}")
+            println("Thats the type of appurls: ${config.appUrls.getClass()}")
+
+            if (!(appUrl instanceof Map)) {
+                error "[${STEP_NAME}] The element ${appUrl} is not of type map. Please provide appUrls as a list of maps."
+            }
+
+            if (!appUrl.url) {
+                error "[${STEP_NAME}] No url property was defined for the following element in appUrls: ${appUrl}"
+            }
+
+            println("Thats the appUrl: ${appUrl}")
             if (appUrl.credentialId) {
                 println("We'll add the credentials to the credentials list now.")
                 credentials.add([$class: 'UsernamePasswordMultiBinding', credentialsId: appUrl.credentialId, passwordVariable: 'e2e_password', usernameVariable: 'e2e_username'])
@@ -72,23 +99,19 @@ void call(Map parameters = [:]) {
                 Utils utils = new Utils()
                 utils.unstashStageFiles(script, stageName)
                 try {
+                    println("now withCredentials: ${credentials}")
                     withCredentials(credentials) {
-                        // TODO move up to config validation
-                        if (appUrl instanceof Map && appUrl.url) {
-                            if (appUrl.parameters) {
-                                // TODO: See what happens with the appUrl.parameters property (problem of having a string which should atually be a list of parameters handed to the execrunner in the go step later)
-                                println("appUrl.parameters is set")
-                                npmExecuteScripts(script: script, parameters: npmParameters, install: false, runScripts: ["$config.runScript"], scriptOptions: ["--launchUrl=${appUrl}", appUrl.parameters])
-                            }
-                            println("appUrl.parameters is not set")
-                            npmExecuteScripts(script: script, parameters: npmParameters, install: false, runScripts: ["$config.runScript"], scriptOptions: ["--launchUrl=${appUrl}"])
-                        } else {
-                            error("Each appUrl in the configuration must be a Map containing a property url. Optionally it can contain a property credentialId and parameters.")
+                        if (appUrl.parameters) {
+                            println("appUrl.parameters is set")
+                            npmExecuteScripts(script: script, parameters: npmParameters, install: false, runScripts: [config.runScript], scriptOptions: ["--launchUrl=${appUrl.url}", appUrl.parameters])
                         }
+                        println("Thats the URL: ${appUrl.url}")
+                        println("appUrl.parameters is not set")
+                        npmExecuteScripts(script: script, parameters: npmParameters, install: false, runScripts: [config.runScript], scriptOptions: ["--launchUrl=${appUrl.url}"])
                     }
 
                 } catch (Exception e) {
-                   error "[${STEP_NAME}] The test execution failed with error: ${e.getMessage()}"
+                   error "[${STEP_NAME}] The execution failed with error: ${e.getMessage()}"
                 } finally {
                     //TODO: Fix Report handling
                     /*
@@ -122,11 +145,11 @@ void call(Map parameters = [:]) {
             }
             index++
         }
-        runClosures(e2ETests)
+        runClosures(e2ETests, config)
     }
 }
 
-def runClosures(Map toRun) {
+def runClosures(Map toRun, Map config) {
     echo "Executing end to end tests"
     if (config.parallelExecution) {
         echo "Executing end to end tests in parallel"
