@@ -66,7 +66,8 @@ void call(Map parameters = [:]) {
 
         }
         if (!(config.appUrls instanceof List)) {
-            error "[${STEP_NAME}] The execution failed, since appUrls is not a list. Please provide appUrls as a list of maps."
+            error "[${STEP_NAME}] The execution failed, since appUrls is not a list. Please provide appUrls as a list of maps. For example:\n" +
+                "appUrls: \n" + "  - url: 'https://my-url.com'\n" + "    credentialId: myCreds"
         }
         if (!config.runScript) {
             error "[${STEP_NAME}] No runScript was defined."
