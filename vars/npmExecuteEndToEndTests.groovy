@@ -21,7 +21,7 @@ import static com.sap.piper.Prerequisites.checkScript
      * These parameters must be a list of strings, where each string corresponds to one element of the parameters.
      * For example, if the parameter `--tag scenario1` should be passed to the test, specify parameters: ["--tag", "scenario1"].
      * These parameters are appended to the npm command during execution.
-     */ //TODO: Make it similar to cfcreateservices defninition
+     */
     'appUrls',
     /**
      * Script to be executed from package.json.
@@ -98,7 +98,7 @@ void call(Map parameters = [:]) {
                         if (appUrl.parameters) {
                             if (appUrl.parameters instanceof List) {
                                 println("appUrl.parameters is set")
-                                npmExecuteScripts(script: script, parameters: npmParameters, install: false, runScripts: [config.runScript], scriptOptions: ["--launchUrl=${appUrl.url}", appUrl.parameters])
+                                npmExecuteScripts(script: script, parameters: npmParameters, install: false, virtualFrameBuffer: true, runScripts: [config.runScript], scriptOptions: ["--launchUrl=${appUrl.url}", appUrl.parameters])
                             } else {
                                 error "[${STEP_NAME}] The parameters property is not of type list. Please provide parameters as a list of strings."
                             }
@@ -106,7 +106,7 @@ void call(Map parameters = [:]) {
                         }
                         println("Thats the URL: ${appUrl.url}")
                         println("appUrl.parameters is not set")
-                        npmExecuteScripts(script: script, parameters: npmParameters, install: false, runScripts: [config.runScript], scriptOptions: ["--launchUrl=${appUrl.url}"])
+                        npmExecuteScripts(script: script, parameters: npmParameters, install: false, virtualFrameBuffer: true, runScripts: [config.runScript], scriptOptions: ["--launchUrl=${appUrl.url}"])
                     }
 
                 } catch (Exception e) {
@@ -116,21 +116,21 @@ void call(Map parameters = [:]) {
 
                     //archiveArtifacts artifacts: "${s4SdkGlobals.endToEndReports}/**", allowEmptyArchive: true
 
-                    List cucumberFiles = findFiles(glob: "**/e2e/*.json")
-                    List junitFiles = findFiles(glob: "**/e2e/*.xml")
+                    // List cucumberFiles = findFiles(glob: "**/e2e/*.json")
+                    //List junitFiles = findFiles(glob: "**/e2e/*.xml")
 
-                    if(cucumberFiles.size()>0){
+                    //if(cucumberFiles.size()>0){
                         // TODO what about archiveArtifacts?
-                        step($class: 'CucumberTestResultArchiver', testResults: "**/e2e/*.json")
-                    }
-                    else if(junitFiles.size()>0){
+                   //     step($class: 'CucumberTestResultArchiver', testResults: "**/e2e/*.json")
+                    //}
+                    /*else if(junitFiles.size()>0){
                         testsPublishResults script: script, junit: [updateResults: true, archive: true]
 
                     } else {
                         error("No JUnit or cucumber report files found in ${s4SdkGlobals.endToEndReports}")
                     }
                     //testsPublishResults script: script, junit: [updateResults: true]
-                    //println("Implement the report handling please")
+                    //println("Implement the report handling please")*/
                     utils.stashStageFiles(script, parameters.stage)
                 }
             }
