@@ -60,7 +60,6 @@ void call(Map parameters = [:]) {
         def npmParameters = [:]
         npmParameters.dockerOptions = ['--shm-size 512MB']
 
-        // TODO: add config validation
         if (!config.appUrls) {
             error "[${STEP_NAME}] The execution failed, since no appUrls are defined. Please provide appUrls as a list of maps."
         }
@@ -71,15 +70,10 @@ void call(Map parameters = [:]) {
             error "[${STEP_NAME}] No runScript was defined."
         }
 
-
-        //for (def appUrl : config.appUrls) {
         for (int i = 0; i < config.appUrls.size(); i++) {
             List credentials = []
 
             def appUrl = config.appUrls[i]
-            println("Thats the type of appurl: ${appUrl.getClass()}")
-            println("Thats the bool: ${appUrl instanceof Map}")
-            println("Thats the type of appurls: ${config.appUrls.getClass()}")
 
             if (!(appUrl instanceof Map)) {
                 error "[${STEP_NAME}] The element ${appUrl} is not of type map. Please provide appUrls as a list of maps."
@@ -102,8 +96,13 @@ void call(Map parameters = [:]) {
                     println("now withCredentials: ${credentials}")
                     withCredentials(credentials) {
                         if (appUrl.parameters) {
-                            println("appUrl.parameters is set")
-                            npmExecuteScripts(script: script, parameters: npmParameters, install: false, runScripts: [config.runScript], scriptOptions: ["--launchUrl=${appUrl.url}", appUrl.parameters])
+                            if (appUrl.parameters instanceof List) {
+                                println("appUrl.parameters is set")
+                                npmExecuteScripts(script: script, parameters: npmParameters, install: false, runScripts: [config.runScript], scriptOptions: ["--launchUrl=${appUrl.url}", appUrl.parameters])
+                            } else {
+                                error "[${STEP_NAME}] The parameters property is not of type list. Please provide parameters as a list of strings."
+                            }
+
                         }
                         println("Thats the URL: ${appUrl.url}")
                         println("appUrl.parameters is not set")
@@ -114,21 +113,24 @@ void call(Map parameters = [:]) {
                    error "[${STEP_NAME}] The execution failed with error: ${e.getMessage()}"
                 } finally {
                     //TODO: Fix Report handling
-                    /*
-                    archiveArtifacts artifacts: "${s4SdkGlobals.endToEndReports}/**", allowEmptyArchive: true
 
-                    List cucumberFiles = findFiles(glob: "${s4SdkGlobals.endToEndReports}/*.json")
-                    List junitFiles = findFiles(glob: "${s4SdkGlobals.endToEndReports}/*.xml")
+                    //archiveArtifacts artifacts: "${s4SdkGlobals.endToEndReports}/**", allowEmptyArchive: true
+
+                    List cucumberFiles = findFiles(glob: "**/e2e/*.json")
+                    List junitFiles = findFiles(glob: "**/e2e/*.xml")
 
                     if(cucumberFiles.size()>0){
-                        step($class: 'CucumberTestResultArchiver', testResults: "${s4SdkGlobals.endToEndReports}/*.json")
+                        // TODO what about archiveArtifacts?
+                        step($class: 'CucumberTestResultArchiver', testResults: "**/e2e/*.json")
                     }
                     else if(junitFiles.size()>0){
-                        junit allowEmptyResults: true, testResults: "${s4SdkGlobals.endToEndReports}/*.xml"
+                        testsPublishResults script: script, junit: [updateResults: true, archive: true]
+
                     } else {
                         error("No JUnit or cucumber report files found in ${s4SdkGlobals.endToEndReports}")
-                    }*/
-                    println("Implement the report handling please")
+                    }
+                    //testsPublishResults script: script, junit: [updateResults: true]
+                    //println("Implement the report handling please")
                     utils.stashStageFiles(script, parameters.stage)
                 }
             }
