@@ -28,10 +28,12 @@ import static com.sap.piper.Prerequisites.checkScript
      */
     'runScript'])
 @Field Set PARAMETER_KEYS = STEP_CONFIG_KEYS
-/**
- *
- */
 
+@Field Map CONFIG_KEY_COMPATIBILITY = [parallelExecution: 'features/parallelTestExecution']
+
+/**
+ * Executes end to end tests by running the npm script configured via the `runScript` property.
+ */
 @GenerateDocumentation
 void call(Map parameters = [:]) {
     handlePipelineStepErrors(stepName: STEP_NAME, stepParameters: parameters) {
@@ -40,9 +42,9 @@ void call(Map parameters = [:]) {
 
         Map config = ConfigurationHelper.newInstance(this)
             .loadStepDefaults()
-            .mixinGeneralConfig(script.commonPipelineEnvironment, GENERAL_CONFIG_KEYS)
-            .mixinStepConfig(script.commonPipelineEnvironment, STEP_CONFIG_KEYS)
-            .mixinStageConfig(script.commonPipelineEnvironment, stageName, STEP_CONFIG_KEYS)
+            .mixinGeneralConfig(script.commonPipelineEnvironment, GENERAL_CONFIG_KEYS, CONFIG_KEY_COMPATIBILITY)
+            .mixinStepConfig(script.commonPipelineEnvironment, STEP_CONFIG_KEYS, CONFIG_KEY_COMPATIBILITY)
+            .mixinStageConfig(script.commonPipelineEnvironment, stageName, STEP_CONFIG_KEYS, CONFIG_KEY_COMPATIBILITY)
             .mixin(parameters, PARAMETER_KEYS)
             .use()
 
@@ -52,16 +54,16 @@ void call(Map parameters = [:]) {
             stepParamKey1: 'scriptMissing',
             stepParam1: parameters?.script == null
         ], config)
-        println("Here we have the config: ${config}")
+
         def e2ETests = [:]
         def index = 1
 
-        // TODO: test downloadCache usage
         def npmParameters = [:]
         npmParameters.dockerOptions = ['--shm-size 512MB']
 
         if (!config.appUrls) {
-            error "[${STEP_NAME}] The execution failed, since no appUrls are defined. Please provide appUrls as a list of maps."
+            error "[${STEP_NAME}] The execution failed, since no appUrls are defined. Please provide appUrls as a list of maps.\n"
+
         }
         if (!(config.appUrls instanceof List)) {
             error "[${STEP_NAME}] The execution failed, since appUrls is not a list. Please provide appUrls as a list of maps."
@@ -72,65 +74,37 @@ void call(Map parameters = [:]) {
 
         for (int i = 0; i < config.appUrls.size(); i++) {
             List credentials = []
-
             def appUrl = config.appUrls[i]
 
             if (!(appUrl instanceof Map)) {
                 error "[${STEP_NAME}] The element ${appUrl} is not of type map. Please provide appUrls as a list of maps."
             }
-
             if (!appUrl.url) {
                 error "[${STEP_NAME}] No url property was defined for the following element in appUrls: ${appUrl}"
             }
-
-            println("Thats the appUrl: ${appUrl}")
             if (appUrl.credentialId) {
-                println("We'll add the credentials to the credentials list now.")
-                credentials.add([$class: 'UsernamePasswordMultiBinding', credentialsId: appUrl.credentialId, passwordVariable: 'e2e_password', usernameVariable: 'e2e_username'])
-                println("Thats the credentials list now: ${credentials}")
+                credentials.add(usernamePassword(credentialsId: appUrl.credentialId, passwordVariable: 'e2e_password', usernameVariable: 'e2e_username'))
             }
+
             Closure e2eTest = {
                 Utils utils = new Utils()
                 utils.unstashStageFiles(script, stageName)
                 try {
-                    println("now withCredentials: ${credentials}")
                     withCredentials(credentials) {
                         if (appUrl.parameters) {
                             if (appUrl.parameters instanceof List) {
-                                println("appUrl.parameters is set")
                                 npmExecuteScripts(script: script, parameters: npmParameters, install: false, virtualFrameBuffer: true, runScripts: [config.runScript], scriptOptions: ["--launchUrl=${appUrl.url}", appUrl.parameters])
                             } else {
                                 error "[${STEP_NAME}] The parameters property is not of type list. Please provide parameters as a list of strings."
                             }
-
                         }
-                        println("Thats the URL: ${appUrl.url}")
-                        println("appUrl.parameters is not set")
                         npmExecuteScripts(script: script, parameters: npmParameters, install: false, virtualFrameBuffer: true, runScripts: [config.runScript], scriptOptions: ["--launchUrl=${appUrl.url}"])
                     }
 
                 } catch (Exception e) {
-                   error "[${STEP_NAME}] The execution failed with error: ${e.getMessage()}"
+                    error "[${STEP_NAME}] The execution failed with error: ${e.getMessage()}"
                 } finally {
-                    //TODO: Fix Report handling
-
-                    //archiveArtifacts artifacts: "${s4SdkGlobals.endToEndReports}/**", allowEmptyArchive: true
-
-                    // List cucumberFiles = findFiles(glob: "**/e2e/*.json")
-                    //List junitFiles = findFiles(glob: "**/e2e/*.xml")
-
-                    //if(cucumberFiles.size()>0){
-                        // TODO what about archiveArtifacts?
-                   //     step($class: 'CucumberTestResultArchiver', testResults: "**/e2e/*.json")
-                    //}
-                    /*else if(junitFiles.size()>0){
-                        testsPublishResults script: script, junit: [updateResults: true, archive: true]
-
-                    } else {
-                        error("No JUnit or cucumber report files found in ${s4SdkGlobals.endToEndReports}")
-                    }
-                    //testsPublishResults script: script, junit: [updateResults: true]
-                    //println("Implement the report handling please")*/
+                    //TODO: Implement Report handling
                     utils.stashStageFiles(script, parameters.stage)
                 }
             }
@@ -147,21 +121,6 @@ void call(Map parameters = [:]) {
             }
             index++
         }
-        runClosures(e2ETests, config)
+        runClosures(closures: e2ETests, parallelExecution: config.parallelExecution, label: "end to end tests", script: script)
     }
 }
-
-def runClosures(Map toRun, Map config) {
-    echo "Executing end to end tests"
-    if (config.parallelExecution) {
-        echo "Executing end to end tests in parallel"
-        parallel toRun
-    } else {
-        echo "Executing end to end tests in sequence"
-        def closuresToRun = toRun.values().asList()
-        for (int i = 0; i < closuresToRun.size(); i++) {
-            (closuresToRun[i] as Closure)()
-        }
-    }
-}
-

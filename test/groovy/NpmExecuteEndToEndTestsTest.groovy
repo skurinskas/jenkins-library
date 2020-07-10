@@ -163,6 +163,7 @@ class NpmExecuteEndToEndTestsTest extends BasePiperTest {
             runScript: "ci-e2e"
         )
 
+        assertFalse(executedInParallel)
         assert npmExecuteScriptsRule.hasParameter('script', nullScript)
         assert npmExecuteScriptsRule.hasParameter('parameters', [dockerOptions: ['--shm-size 512MB']])
         assert npmExecuteScriptsRule.hasParameter('install', false)
