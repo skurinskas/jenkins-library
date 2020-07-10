@@ -21,7 +21,7 @@ import static com.sap.piper.Prerequisites.checkScript
      * These parameters must be a list of strings, where each string corresponds to one element of the parameters.
      * For example, if the parameter `--tag scenario1` should be passed to the test, specify parameters: ["--tag", "scenario1"].
      * These parameters are appended to the npm command during execution.
-     */
+     */ //TODO: Make it similar to cfcreateservices defninition
     'appUrls',
     /**
      * Script to be executed from package.json.
@@ -36,7 +36,7 @@ import static com.sap.piper.Prerequisites.checkScript
 void call(Map parameters = [:]) {
     handlePipelineStepErrors(stepName: STEP_NAME, stepParameters: parameters) {
         def script = checkScript(this, parameters) ?: this
-        def stageName = parameters.stageName?:env.STAGE_NAME
+        def stageName = parameters.stage ?: env.STAGE_NAME
 
         Map config = ConfigurationHelper.newInstance(this)
             .loadStepDefaults()
