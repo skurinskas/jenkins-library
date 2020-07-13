@@ -27,7 +27,13 @@ import groovy.transform.Field
      * Publishes performance test results with the [Performance plugin](https://plugins.jenkins.io/performance).
      * @possibleValues `true`, `false`, `Map`
      */
-    'jmeter'
+    'jmeter',
+    /**
+     * Publishes performance test results with the [Cucumber plugin](https://plugins.jenkins.io/performance).
+     * @possibleValues `true`, `false`, `Map`
+     */
+    'cucumber'
+
 ]
 
 @Field def STEP_NAME = getClass().getName()
