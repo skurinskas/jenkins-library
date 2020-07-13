@@ -167,7 +167,8 @@ def publishCucumberReport(Map settings = [:]) {
     if(settings.active){
         def pattern = settings.get('pattern')
         def allowEmpty = settings.get('allowEmptyResults')
-
+        println("Thats the pattern: ${pattern}")
+        sh "ls -a"
         archiveResults(settings.get('archive'), pattern, allowEmpty)
 
         cucumber(
