@@ -168,7 +168,7 @@ def publishCucumberReport(Map settings = [:]) {
         def pattern = settings.get('pattern')
         def allowEmpty = settings.get('allowEmptyResults')
         println("Thats the pattern: ${pattern}")
-        sh "ls -a"
+        sh "ls -a s4hana_pipeline/reports/e2e/"
         archiveArtifacts artifacts: "s4hana_pipeline/reports/e2e/**", allowEmptyArchive: true
         //archiveResults(settings.get('archive'), "s4hana_pipeline/reports/e2e/**", allowEmpty)
 
