@@ -111,13 +111,13 @@ void call(Map parameters = [:]) {
                     List junitFiles = findFiles(glob: "**/e2e/*.xml")
                     println("cucumber files: ${cucumberFiles}")
                     println("junit files: ${junitFiles}")
-                   // if(cucumberFiles.size()>0) {
-                     //   testsPublishResults script: script, cucumber: [active: true, archive: false]
-                    //} else if(junitFiles.size()>0){
-                    testsPublishResults script: script, junit: [updateResults: true, active: true, archive: true], cucumber: [active: true, archive: false]
-                    //} else {
-                     //   echo "[${STEP_NAME}] No JUnit or cucumber report files found, testsPublishResults skipped"
-                    //}
+                    if(cucumberFiles.size()>0) {
+                        testsPublishResults script: script, cucumber: [active: true, archive: false]
+                    } else if(junitFiles.size()>0){
+                        testsPublishResults script: script, junit: [updateResults: true, active: true, archive: true], cucumber: [active: true, archive: false]
+                    } else {
+                        echo "[${STEP_NAME}] No JUnit or cucumber report files found, testsPublishResults skipped"
+                    }
                     utils.stashStageFiles(script, parameters.stage)
                 }
             }
