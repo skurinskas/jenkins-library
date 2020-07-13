@@ -109,7 +109,8 @@ void call(Map parameters = [:]) {
                     //TODO: Implement Report handling
                     List cucumberFiles = findFiles(glob: "**/e2e/*.json")
                     List junitFiles = findFiles(glob: "**/e2e/*.xml")
-
+                    println("cucumber files: ${cucumberFiles}")
+                    println("junit files: ${junitFiles}")
                     if(cucumberFiles.size()>0) {
                         testsPublishResults script: script, cucumber: [active: true, archive: true]
                     } else if(junitFiles.size()>0){
