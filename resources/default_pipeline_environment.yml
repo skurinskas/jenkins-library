@@ -547,6 +547,7 @@ steps:
       archive: false
       active: false
     cucumber:
+      allowEmptyResults: true
       archive: false
       active: false
   checkChangeInDevelopment:
