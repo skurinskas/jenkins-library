@@ -168,10 +168,11 @@ def publishCucumberReport(Map settings = [:]) {
         def pattern = settings.get('pattern')
         def allowEmpty = settings.get('allowEmptyResults')
 
+        archiveResults(settings.get('archive'), pattern, allowEmpty)
+
         cucumber(
             testResults: pattern
         )
-        archiveResults(settings.get('archive'), pattern, allowEmpty)
     }
 }
 
