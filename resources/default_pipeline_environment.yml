@@ -546,6 +546,10 @@ steps:
       allowEmptyResults: true
       archive: false
       active: false
+    cucumber:
+      pattern: '**/*.json'
+      archive: false
+      active: false
   checkChangeInDevelopment:
       failIfStatusIsNotInDevelopment: true
   tmsUpload:

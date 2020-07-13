@@ -107,6 +107,7 @@ void call(Map parameters = [:]) {
                     error "[${STEP_NAME}] The execution failed with error: ${e.getMessage()}"
                 } finally {
                     //TODO: Implement Report handling
+                    testsPublishResults script: script, junit: [updateResults: true, archive: true], cucumber: [archive: true]
                     utils.stashStageFiles(script, parameters.stage)
                 }
             }

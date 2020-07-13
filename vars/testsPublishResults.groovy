@@ -73,6 +73,7 @@ void call(Map parameters = [:]) {
         publishJacocoReport(configuration.get('jacoco'))
         publishCoberturaReport(configuration.get('cobertura'))
         publishJMeterReport(configuration.get('jmeter'))
+        publishCucumberReport(configuration.get('cucumber'))
 
         if (configuration.failOnError && JenkinsUtils.hasTestFailures(script.currentBuild)) {
             script.currentBuild.result = 'FAILURE'
@@ -153,6 +154,18 @@ def publishJMeterReport(Map settings = [:]){
             compareBuildPrevious: settings.get('compareBuildPrevious')
         )
         archiveResults(settings.get('archive'), pattern, settings.get('allowEmptyResults'))
+    }
+}
+
+def publishCucumberReport(Map settings = [:]) {
+    if(settings.active){
+        def pattern = settings.get('pattern')
+        def allowEmpty = settings.get('allowEmptyResults')
+
+        cucumber(
+            testResults: pattern
+        )
+        archiveResults(settings.get('archive'), pattern, allowEmpty)
     }
 }
 
