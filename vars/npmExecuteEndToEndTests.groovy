@@ -112,7 +112,8 @@ void call(Map parameters = [:]) {
                     println("cucumber files: ${cucumberFiles}")
                     println("junit files: ${junitFiles}")
                     if(cucumberFiles.size()>0) {
-                        testsPublishResults script: script, cucumber: [active: true, archive: true]
+                        archiveArtifacts artifacts: "s4hana_pipeline/reports/e2e/**", allowEmptyArchive: true
+                        testsPublishResults script: script, cucumber: [active: true, archive: false]
                     } else if(junitFiles.size()>0){
                         testsPublishResults script: script, junit: [updateResults: true, active: true, archive: true]
                     } else {
