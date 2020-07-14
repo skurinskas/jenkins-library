@@ -169,7 +169,7 @@ def publishCucumberReport(Map settings = [:]) {
         def allowEmpty = settings.get('allowEmptyResults')
 
         cucumber(
-            testResults: pattern
+            fileIncludePattern: "s4hana_pipeline/reports/*.json"
         )
         archiveResults(settings.get('archive'), "s4hana_pipeline/reports/e2e/**", allowEmpty)
     }
