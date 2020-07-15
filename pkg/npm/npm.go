@@ -223,9 +223,9 @@ func (exec *Execute) FindPackageJSONFiles(excludeList []string) ([]string, error
 		excludePackage := false
 		for _, exclude := range excludeList {
 			matched, err := doublestar.PathMatch(exclude, file)
-			log.Entry().Info("Thats the exclude: "+ exclude)
-			log.Entry().Info("Thats the file: "+ file)
-			log.Entry().Info(matched)
+			//log.Entry().Info("Thats the exclude: "+ exclude)
+			//log.Entry().Info("Thats the file: "+ file)
+			//log.Entry().Info(matched)
 			if err != nil {
 				return nil, fmt.Errorf("failed to match file %s to pattern %s: %w", file, exclude, err)
 			}
