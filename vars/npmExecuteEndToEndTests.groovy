@@ -99,8 +99,9 @@ void call(Map parameters = [:]) {
                             } else {
                                 error "[${STEP_NAME}] The parameters property is not of type list. Please provide parameters as a list of strings."
                             }
+                        } else {
+                            npmExecuteScripts(script: script, parameters: npmParameters, install: false, virtualFrameBuffer: true, runScripts: [config.runScript], scriptOptions: ["--launchUrl=${appUrl.url}"], buildDescriptorExcludeList: ["**/*/package.json"])
                         }
-                        npmExecuteScripts(script: script, parameters: npmParameters, install: false, virtualFrameBuffer: true, runScripts: [config.runScript], scriptOptions: ["--launchUrl=${appUrl.url}"], buildDescriptorExcludeList: ["**/*/package.json"])
                     }
 
                 } catch (Exception e) {
